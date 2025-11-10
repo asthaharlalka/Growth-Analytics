@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creative & Attribution Analytics Platform</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 3rem 2.5rem;
+            color: white;
+            border-bottom: 4px solid #00C896;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.5px;
+        }
+
+        .header p {
+            font-size: 1.15rem;
+            color: #B0B0B0;
+            font-weight: 400;
+        }
+
+        .upload-section {
+            padding: 2.5rem;
+            background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+        }
+
+        .upload-box {
+            border: 3px dashed #00C896;
+            border-radius: 16px;
+            padding: 3rem;
+            text-align: center;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        }
+
+        .upload-box:hover {
+            border-color: #00B589;
+            background: #F0FDF9;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,200,150,0.15);
+        }
+
+        .upload-box.dragover {
+            border-color: #00B589;
+            background: #E6FCF5;
+            transform: scale(1.01);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #00C896 0%, #00B589 100%);
+            color: white;
+            padding: 1rem 2.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,200,150,0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,200,150,0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 2.5rem;
+            border-bottom: 2px solid #E8E8E8;
+            overflow-x: auto;
+        }
+
+        .tab {
+            padding: 1rem 1.75rem;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #666;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .tab:hover {
+            color: #00C896;
+            background: #F0FDF9;
+        }
+
+        .tab.active {
+            color: #00C896;
+            border-bottom-color: #00C896;
+            background: #F0FDF9;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .metric-card {
+            background: white;
+            padding: 1.75rem;
+            border-radius: 14px;
+            border-left: 5px solid #00C896;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.3s ease;
+        }
+
+        .metric-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+
+        .metric-card h3 {
+            font-size: 0.875rem;
+            color: #666;
+            margin-bottom: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+
+        .metric-card .value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-card .delta {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #00C896;
+        }
+
+        .metric-card .delta.negative {
+            color: #D32F2F;
+        }
+
+        .chart-container {
+            margin: 2rem 0;
+            background: white;
+            padding: 2rem;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 1.5rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th, td {
+            padding: 1.2rem;
+            text-align: left;
+        }
+
+        th {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        td {
+            background: white;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        tr:hover td {
+            background: #f8f9fa;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-fatigued { background: #FFEBEE; color: #C62828; }
+        .status-declining { background: #FFF3E0; color: #E65100; }
+        .status-warning { background: #FFFDE7; color: #F57F17; }
+        .status-stable { background: #E3F2FD; color: #1565C0; }
+        .status-healthy { background: #E8F5E9; color: #2E7D32; }
+
+        .alert {
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            border-left: 5px solid;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .alert-info { background: #E3F2FD; border-left-color: #1976D2; color: #1565C0; }
+        .alert-success { background: #E8F5E9; border-left-color: #388E3C; color: #2E7D32; }
+        .alert-warning { background: #FFF3E0; border-left-color: #F57C00; color: #E65100; }
+        .alert-danger { background: #FFEBEE; border-left-color: #D32F2F; color: #C62828; }
+
+        #loadingIndicator {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #666;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #00C896;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .file-status {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .file-badge {
+            padding: 0.75rem 1.5rem;
+            background: #E8F5E9;
+            color: #2E7D32;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .insight-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 14px;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+            border-left: 5px solid #00C896;
+        }
+
+        .insight-card h3 {
+            color: #1a1a2e;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .insight-card p {
+            color: #666;
+            line-height: 1.8;
+            font-size: 1rem;
+        }
+
+        .heatmap {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .heatmap-cell {
+            padding: 1.5rem;
+            border-radius: 10px;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .heatmap-cell:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+
+        .heatmap-cell .label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+        }
+
+        .heatmap-cell .value {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Creative & Attribution Analytics Platform</h1>
+            <p>Enterprise-grade analytics for performance marketing optimization</p>
+        </div>
+
+        <div class="upload-section" id="uploadSection">
+            <div class="upload-box" id="uploadBox">
+                <div class="upload-icon">📁</div>
+                <h2 style="margin-bottom: 1rem; color: #1a1a2e;">Upload Your Data</h2>
+                <p style="color: #666; margin-bottom: 1.5rem; font-size: 1.05rem;">
+                    Drag and drop your CSV files here or click to browse
+                </p>
+                <input type="file" id="fileInput" accept=".csv" multiple style="display: none;">
+                <button class="btn" onclick="document.getElementById('fileInput').click()">
+                    Select Files
+                </button>
+                <p style="margin-top: 1.5rem; font-size: 0.95rem; color: #999;">
+                    Required: events.csv, creatives.csv, spend.csv
+                </p>
+            </div>
+            <div class="file-status" id="fileStatus"></div>
+        </div>
+
+        <div id="loadingIndicator" class="hidden">
+            <div class="spinner"></div>
+            <h2 style="color: #1a1a2e; margin-bottom: 0.5rem;">🔄 Analyzing your data...</h2>
+            <p>This may take a few moments</p>
+        </div>
+
+        <div class="content hidden" id="mainContent">
+            <div class="tabs">
+                <button class="tab active" onclick="switchTab(0)">🎯 Attribution Integrity</button>
+                <button class="tab" onclick="switchTab(1)">🎨 Creative Fatigue</button>
+                <button class="tab" onclick="switchTab(2)">💰 Impact Analysis</button>
+                <button class="tab" onclick="switchTab(3)">📈 Executive Summary</button>
+            </div>
+
+            <!-- Tab 1: Attribution Integrity -->
+            <div class="tab-content active" id="tab0">
+                <h2 style="color: #1a1a2e; margin-bottom: 2rem; font-size: 2rem;">Attribution Integrity Analysis</h2>
+                <div class="metrics" id="attrMetrics"></div>
+                <div class="chart-container">
+                    <div class="chart-title">Attribution Quality Distribution</div>
+                    <canvas id="attrChart"></canvas>
+                </div>
+                <div id="attrDetails"></div>
+            </div>
+
+            <!-- Tab 2: Creative Fatigue -->
+            <div class="tab-content" id="tab1">
+                <h2 style="color: #1a1a2e; margin-bottom: 2rem; font-size: 2rem;">Creative Fatigue Analysis</h2>
+                <div class="metrics" id="fatigueMetrics"></div>
+                <div id="fatigueTable"></div>
+            </div>
+
+            <!-- Tab 3: Impact Analysis -->
+            <div class="tab-content" id="tab2">
+                <h2 style="color: #1a1a2e; margin-bottom: 2rem; font-size: 2rem;">Impact Analysis</h2>
+                <div id="impactContent"></div>
+            </div>
+
+            <!-- Tab 4: Executive Summary -->
+            <div class="tab-content" id="tab3">
+                <h2 style="color: #1a1a2e; margin-bottom: 2rem; font-size: 2rem;">Executive Summary</h2>
+                <div id="executiveSummary"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let eventsData = null;
+        let creativesData = null;
+        let spendData = null;
+        let uploadedFiles = {};
+        let charts = {};
+
+        // File upload handling
+        const uploadBox = document.getElementById('uploadBox');
+        const fileInput = document.getElementById('fileInput');
+        const fileStatus = document.getElementById('fileStatus');
+
+        uploadBox.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        uploadBox.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadBox.classList.add('dragover');
+        });
+
+        uploadBox.addEventListener('dragleave', () => {
+            uploadBox.classList.remove('dragover');
+        });
+
+        uploadBox.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadBox.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        function handleFiles(files) {
+            Array.from(files).forEach(file => {
+                const fileName = file.name.toLowerCase();
+                if (fileName.includes('event')) {
+                    uploadedFiles.events = file;
+                } else if (fileName.includes('creative')) {
+                    uploadedFiles.creatives = file;
+                } else if (fileName.includes('spend')) {
+                    uploadedFiles.spend = file;
+                }
+            });
+
+            updateFileStatus();
+
+            if (uploadedFiles.events && uploadedFiles.creatives && uploadedFiles.spend) {
+                setTimeout(() => processData(), 500);
+            }
+        }
+
+        function updateFileStatus() {
+            const badges = [];
+            if (uploadedFiles.events) badges.push('<div class="file-badge">✓ Events</div>');
+            if (uploadedFiles.creatives) badges.push('<div class="file-badge">✓ Creatives</div>');
+            if (uploadedFiles.spend) badges.push('<div class="file-badge">✓ Spend</div>');
+            
+            fileStatus.innerHTML = badges.join('');
+        }
+
+        function processData() {
+            document.getElementById('loadingIndicator').classList.remove('hidden');
+
+            Promise.all([
+                parseCSV(uploadedFiles.events),
+                parseCSV(uploadedFiles.creatives),
+                parseCSV(uploadedFiles.spend)
+            ]).then(([events, creatives, spend]) => {
+                eventsData = events;
+                creativesData = creatives;
+                spendData = spend;
+
+                document.getElementById('uploadSection').classList.add('hidden');
+                document.getElementById('loadingIndicator').classList.add('hidden');
+                document.getElementById('mainContent').classList.remove('hidden');
+
+                analyzeData();
+            }).catch(error => {
+                alert('Error processing files: ' + error.message);
+                document.getElementById('loadingIndicator').classList.add('hidden');
+            });
+        }
+
+        function parseCSV(file) {
+            return new Promise((resolve, reject) => {
+                Papa.parse(file, {
+                    header: true,
+                    dynamicTyping: true,
+                    skipEmptyLines: true,
+                    complete: (results) => {
+                        if (results.errors.length > 0) {
+                            console.warn('CSV parsing warnings:', results.errors);
+                        }
+                        resolve(results.data);
+                    },
+                    error: (error) => reject(error)
+                });
+            });
+        }
+
+        function analyzeData() {
+            analyzeAttribution();
+            analyzeFatigue();
+            analyzeImpact();
+            generateExecutiveSummary();
+        }
+
+        function analyzeAttribution() {
+            const purchases = eventsData.filter(e => e.event_type === 'PURCHASE');
+            
+            // Classify attribution quality
+            const classified = purchases.map(p => ({
+                ...p,
+                attr_class: p.click_id ? 'Clean (Click ID)' :
+                           p.client_id ? 'Stitched (Client ID)' :
+                           p.customer_id ? 'Stitched (Customer ID)' : 
+                           'Unattributed'
+            }));
+
+            // Aggregate by classification
+            const summary = {};
+            classified.forEach(p => {
+                if (!summary[p.attr_class]) {
+                    summary[p.attr_class] = { count: 0, revenue: 0 };
+                }
+                summary[p.attr_class].count++;
+                summary[p.attr_class].revenue += p.amount || 0;
+            });
+
+            const total = classified.length;
+            const totalRevenue = classified.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const cleanCount = summary['Clean (Click ID)']?.count || 0;
+            const cleanPct = (cleanCount / total * 100).toFixed(1);
+            const degradedRev = totalRevenue - (summary['Clean (Click ID)']?.revenue || 0);
+
+            // Display metrics
+            document.getElementById('attrMetrics').innerHTML = `
+                <div class="metric-card">
+                    <h3>Clean Attribution</h3>
+                    <div class="value">${cleanPct}%</div>
+                    <div class="delta">${cleanPct > 70 ? '✓ High Confidence' : '⚠ Needs Improvement'}</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Total Purchases</h3>
+                    <div class="value">${total.toLocaleString()}</div>
+                    <div class="delta">${cleanCount.toLocaleString()} with Click ID</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Degraded Revenue</h3>
+                    <div class="value">$${Math.round(degradedRev).toLocaleString()}</div>
+                    <div class="delta ${degradedRev > 0 ? 'negative' : ''}">At Risk</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Attribution Methods</h3>
+                    <div class="value">${Object.keys(summary).length}</div>
+                    <div class="delta">Tracking Paths</div>
+                </div>
+            `;
+
+            // Create chart
+            if (charts.attr) charts.attr.destroy();
+            const ctx = document.getElementById('attrChart');
+            charts.attr = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(summary),
+                    datasets: [{
+                        data: Object.values(summary).map(s => s.count),
+                        backgroundColor: ['#00C896', '#4CAF50', '#FFC107', '#FF6B35'],
+                        borderWidth: 3,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 20,
+                                font: { size: 13, weight: '600' }
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const pct = ((value / total) * 100).toFixed(1);
+                                    return `${label}: ${value.toLocaleString()} (${pct}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Browser × Device analysis
+            const browserDevice = {};
+            classified.forEach(p => {
+                const key = `${p.browser || 'Unknown'} × ${p.device || 'Unknown'}`;
+                if (!browserDevice[key]) {
+                    browserDevice[key] = { total: 0, lost: 0, revenue: 0, lostRevenue: 0 };
+                }
+                browserDevice[key].total++;
+                browserDevice[key].revenue += p.amount || 0;
+                if (!p.click_id) {
+                    browserDevice[key].lost++;
+                    browserDevice[key].lostRevenue += p.amount || 0;
+                }
+            });
+
+            // Sort by loss rate
+            const sorted = Object.entries(browserDevice)
+                .map(([combo, data]) => ({
+                    combo,
+                    ...data,
+                    lossRate: (data.lost / data.total * 100).toFixed(1)
+                }))
+                .sort((a, b) => parseFloat(b.lossRate) - parseFloat(a.lossRate))
+                .slice(0, 10);
+
+            let detailsHTML = `
+                <div class="insight-card">
+                    <h3>🔍 Click ID Loss Analysis: Browser × Device Combinations</h3>
+                    <p>Understanding where attribution breaks down across different browser and device combinations helps prioritize technical fixes.</p>
+                </div>
+                <table>
+                    <tr>
+                        <th>Browser × Device</th>
+                        <th>Total Purchases</th>
+                        <th>Lost Click ID</th>
+                        <th>Loss Rate</th>
+                        <th>Revenue at Risk</th>
+                    </tr>
+            `;
+
+            sorted.forEach(item => {
+                detailsHTML += `
+                    <tr>
+                        <td><strong>${item.combo}</strong></td>
+                        <td>${item.total.toLocaleString()}</td>
+                        <td>${item.lost.toLocaleString()}</td>
+                        <td><span class="status-badge ${item.lossRate > 40 ? 'status-fatigued' : item.lossRate > 25 ? 'status-declining' : 'status-warning'}">${item.lossRate}%</span></td>
+                        <td>$${Math.round(item.lostRevenue).toLocaleString()}</td>
+                    </tr>
+                `;
+            });
+
+            detailsHTML += '</table>';
+            document.getElementById('attrDetails').innerHTML = detailsHTML;
+        }
+
+        function analyzeFatigue() {
+            // Calculate metrics by creative with time-series analysis
+            const creativeMetrics = {};
+            
+            // Aggregate spend
+            spendData.forEach(s => {
+                const id = s.creative_id;
+                if (!creativeMetrics[id]) {
+                    creativeMetrics[id] = {
+                        id,
+                        spend: 0,
+                        revenue: 0,
+                        impressions: 0,
+                        clicks: 0,
+                        purchases: 0,
+                        days: new Set(),
+                        dailyPerformance: []
+                    };
+                }
+                creativeMetrics[id].spend += s.spend || 0;
+                creativeMetrics[id].days.add(s.date);
+            });
+
+            // Aggregate events by creative and date for trend analysis
+            const dailyMetrics = {};
+            eventsData.forEach(e => {
+                const id = e.creative_id;
+                const date = e.timestamp ? e.timestamp.split(' ')[0] : '';
+                const key = `${id}_${date}`;
+                
+                if (!dailyMetrics[key]) {
+                    dailyMetrics[key] = { revenue: 0, impressions: 0, clicks: 0, purchases: 0 };
+                }
+                
+                if (e.event_type === 'IMPRESSION') dailyMetrics[key].impressions++;
+                if (e.event_type === 'CLICK') dailyMetrics[key].clicks++;
+                if (e.event_type === 'PURCHASE') {
+                    dailyMetrics[key].purchases++;
+                    dailyMetrics[key].revenue += e.amount || 0;
+                }
+            });
+
+            // Aggregate events for totals
+            eventsData.forEach(e => {
+                const id = e.creative_id;
+                if (creativeMetrics[id]) {
+                    if (e.event_type === 'IMPRESSION') creativeMetrics[id].impressions++;
+                    if (e.event_type === 'CLICK') creativeMetrics[id].clicks++;
+                    if (e.event_type === 'PURCHASE') {
+                        creativeMetrics[id].purchases++;
+                        creativeMetrics[id].revenue += e.amount || 0;
+                    }
+                }
+            });
+
+            // Calculate daily ROAS for trend detection
+            Object.keys(creativeMetrics).forEach(id => {
+                const dailyRoas = [];
+                creativeMetrics[id].days.forEach(date => {
+                    const key = `${id}_${date}`;
+                    if (dailyMetrics[key]) {
+                        const daySpend = spendData.find(s => s.creative_id === id && s.date === date)?.spend || 0;
+                        if (daySpend > 0) {
+                            const dayRoas = dailyMetrics[key].revenue / daySpend;
+                            dailyRoas.push(dayRoas);
+                        }
+                    }
+                });
+                creativeMetrics[id].dailyPerformance = dailyRoas;
+            });
+
+            // Calculate performance metrics and detect fatigue with trend analysis
+            const creatives = Object.values(creativeMetrics).map(c => {
+                const roas = c.spend > 0 ? c.revenue / c.spend : 0;
+                const ctr = c.impressions > 0 ? (c.clicks / c.impressions * 100) : 0;
+                const cvr = c.clicks > 0 ? (c.purchases / c.clicks * 100) : 0;
+                const cpa = c.purchases > 0 ? c.spend / c.purchases : 0;
+                
+                // Enhanced fatigue detection with trend analysis
+                let status;
+                
+                // Calculate trend if we have enough data points
+                if (c.dailyPerformance.length >= 7) {
+                    const firstWeek = c.dailyPerformance.slice(0, 7).reduce((a, b) => a + b, 0) / 7;
+                    const lastWeek = c.dailyPerformance.slice(-7).reduce((a, b) => a + b, 0) / 7;
+                    const degradation = (firstWeek - lastWeek) / firstWeek;
+                    const maxRoas = Math.max(...c.dailyPerformance);
+                    const currentRoas = c.dailyPerformance[c.dailyPerformance.length - 1] || roas;
+                    const dropFromPeak = (maxRoas - currentRoas) / maxRoas;
+                    
+                    // Multi-factor fatigue detection
+                    if (roas < 2.0 && degradation > 0.25) {
+                        status = 'Fatigued';
+                    } else if (roas < 2.5 && (degradation > 0.15 || dropFromPeak > 0.3)) {
+                        status = 'Declining';
+                    } else if (roas < 3.0 && degradation > 0.10) {
+                        status = 'Warning';
+                    } else if (roas >= 3.0 && roas < 4.0 && degradation < 0.10) {
+                        status = 'Stable';
+                    } else if (roas >= 4.0) {
+                        status = 'Healthy';
+                    } else if (roas >= 3.0) {
+                        status = 'Stable';
+                    } else {
+                        status = 'Warning';
+                    }
+                } else {
+                    // Simple thresholds for creatives with less data
+                    if (roas < 2.0) status = 'Fatigued';
+                    else if (roas < 2.8) status = 'Declining';
+                    else if (roas < 3.5) status = 'Warning';
+                    else if (roas < 4.5) status = 'Stable';
+                    else status = 'Healthy';
+                }
+
+                return {
+                    ...c,
+                    roas,
+                    ctr,
+                    cvr,
+                    cpa,
+                    status,
+                    daysActive: c.days.size
+                };
+            });
+
+            // Calculate summary stats
+            const statusCounts = {
+                'Fatigued': 0,
+                'Declining': 0,
+                'Warning': 0,
+                'Stable': 0,
+                'Healthy': 0
+            };
+
+            let atRiskSpend = 0;
+            creatives.forEach(c => {
+                statusCounts[c.status]++;
+                if (c.status === 'Fatigued' || c.status === 'Declining') {
+                    atRiskSpend += c.spend;
+                }
+            });
+
+            const avgROAS = (creatives.reduce((sum, c) => sum + c.roas, 0) / creatives.length).toFixed(2);
+
+            // Display metrics
+            document.getElementById('fatigueMetrics').innerHTML = `
+                <div class="metric-card">
+                    <h3>Fatigued Creatives</h3>
+                    <div class="value">${statusCounts['Fatigued']}</div>
+                    <div class="delta negative">Immediate Action Required</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Declining Creatives</h3>
+                    <div class="value">${statusCounts['Declining']}</div>
+                    <div class="delta" style="color: #F57C00;">Monitor Closely</div>
+                </div>
+                <div class="metric-card">
+                    <h3>Healthy Creatives</h3>
+                    <div class="value">${statusCounts['Healthy'] + statusCounts['Stable']}</div>
+                    <div class="delta">Performing Well</div>
+                </div>
+                <div class="metric-card">
+                    <h3>At-Risk Spend</h3>
+                    <div class="value">$${Math.round(atRiskSpend).toLocaleString()}</div>
+                    <div class="delta negative">Optimize Budget</div>
+                </div>
+            `;
+
+            // Create detailed table
+            let tableHTML = `
+                <div class="insight-card">
+                    <h3>🎨 Creative Performance Overview</h3>
+                    <p>ROAS-based fatigue detection identifies creatives that need rotation or optimization. Lower ROAS indicates potential creative fatigue.</p>
+                </div>
+                <table>
+                    <tr>
+                        <th>Creative ID</th>
+                        <th>Status</th>
+                        <th>ROAS</th>
+                        <th>CTR</th>
+                        <th>CVR</th>
+                        <th>Spend</th>
+                        <th>Revenue</th>
+                        <th>Days Active</th>
+                    </tr>
+            `;
+
+            creatives
+                .sort((a, b) => b.spend - a.spend)
+                .slice(0, 25)
+                .forEach(c => {
+                    tableHTML += `
+                        <tr>
+                            <td><strong>${c.id}</strong></td>
+                            <td><span class="status-badge status-${c.status.toLowerCase()}">${c.status}</span></td>
+                            <td>${c.roas.toFixed(2)}x</td>
+                            <td>${c.ctr.toFixed(2)}%</td>
+                            <td>${c.cvr.toFixed(2)}%</td>
+                            <td>$${Math.round(c.spend).toLocaleString()}</td>
+                            <td>$${Math.round(c.revenue).toLocaleString()}</td>
+                            <td>${c.daysActive}</td>
+                        </tr>
+                    `;
+                });
+
+            tableHTML += '</table>';
+            document.getElementById('fatigueTable').innerHTML = tableHTML;
+        }
+
+        function analyzeImpact() {
+            const purchases = eventsData.filter(e => e.event_type === 'PURCHASE');
+            const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const totalSpend = spendData.reduce((sum, s) => sum + (s.spend || 0), 0);
+            
+            // Calculate degraded attribution impact
+            const cleanPurchases = purchases.filter(p => p.click_id);
+            const degradedRevenue = totalRevenue - cleanPurchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const attributionImpact = degradedRevenue * 0.15; // Estimated 15% recovery potential
+
+            // Calculate fatigued creative impact
+            const creativeMetrics = {};
+            spendData.forEach(s => {
+                if (!creativeMetrics[s.creative_id]) {
+                    creativeMetrics[s.creative_id] = { spend: 0, revenue: 0 };
+                }
+                creativeMetrics[s.creative_id].spend += s.spend || 0;
+            });
+            
+            purchases.forEach(p => {
+                if (creativeMetrics[p.creative_id]) {
+                    creativeMetrics[p.creative_id].revenue += p.amount || 0;
+                }
+            });
+
+            let fatigueImpact = 0;
+            Object.values(creativeMetrics).forEach(c => {
+                const roas = c.spend > 0 ? c.revenue / c.spend : 0;
+                if (roas < 2.5) { // Fatigued or declining
+                    fatigueImpact += c.spend * 0.25; // 25% potential improvement
+                }
+            });
+
+            const totalOpportunity = attributionImpact + fatigueImpact;
+
+            document.getElementById('impactContent').innerHTML = `
+                <div class="metrics">
+                    <div class="metric-card">
+                        <h3>Total Opportunity</h3>
+                        <div class="value">$${Math.round(totalOpportunity).toLocaleString()}</div>
+                        <div class="delta">Recoverable Revenue</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Attribution Fix Impact</h3>
+                        <div class="value">$${Math.round(attributionImpact).toLocaleString()}</div>
+                        <div class="delta">~15% of degraded revenue</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Creative Optimization Impact</h3>
+                        <div class="value">$${Math.round(fatigueImpact).toLocaleString()}</div>
+                        <div class="delta">~25% lift potential</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Implementation Timeline</h3>
+                        <div class="value">14-30</div>
+                        <div class="delta">Days to full impact</div>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <h3>💰 Revenue Recovery Roadmap</h3>
+                    <p><strong>Phase 1 (Week 1-2):</strong> Fix Safari + iOS attribution tracking (~$${Math.round(attributionImpact * 0.6).toLocaleString()} quick win)</p>
+                    <p><strong>Phase 2 (Week 2-3):</strong> Pause fatigued creatives and reallocate budget (~$${Math.round(fatigueImpact * 0.4).toLocaleString()} immediate savings)</p>
+                    <p><strong>Phase 3 (Week 3-4):</strong> Launch creative refresh tests (~$${Math.round(fatigueImpact * 0.6).toLocaleString()} incremental revenue)</p>
+                </div>
+
+                <div class="alert alert-success">
+                    <strong>✓ Recommended Actions</strong>
+                    <p>1. Prioritize Safari + iOS attribution fixes (highest revenue at risk)</p>
+                    <p>2. Pause creatives with ROAS < 1.5 and reallocate to performers</p>
+                    <p>3. Implement creative rotation schedule (refresh every 14-21 days)</p>
+                    <p>4. Set up automated alerts for ROAS degradation > 20%</p>
+                </div>
+            `;
+        }
+
+        function generateExecutiveSummary() {
+            const purchases = eventsData.filter(e => e.event_type === 'PURCHASE');
+            const totalRevenue = purchases.reduce((sum, p) => sum + (p.amount || 0), 0);
+            const totalSpend = spendData.reduce((sum, s) => sum + (s.spend || 0), 0);
+            const overallROAS = (totalRevenue / totalSpend).toFixed(2);
+            const uniqueDates = new Set(spendData.map(s => s.date)).size;
+
+            const cleanPurchases = purchases.filter(p => p.click_id);
+            const cleanPct = (cleanPurchases.length / purchases.length * 100).toFixed(1);
+
+            document.getElementById('executiveSummary').innerHTML = `
+                <div class="metrics">
+                    <div class="metric-card">
+                        <h3>Total Revenue</h3>
+                        <div class="value">$${Math.round(totalRevenue).toLocaleString()}</div>
+                        <div class="delta">${purchases.length.toLocaleString()} purchases</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Total Spend</h3>
+                        <div class="value">$${Math.round(totalSpend).toLocaleString()}</div>
+                        <div class="delta">${uniqueDates} days analyzed</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Overall ROAS</h3>
+                        <div class="value">${overallROAS}x</div>
+                        <div class="delta">${overallROAS > 3 ? '✓ Excellent' : overallROAS > 2 ? '✓ Good' : '⚠ Needs Improvement'}</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Attribution Quality</h3>
+                        <div class="value">${cleanPct}%</div>
+                        <div class="delta">${cleanPct > 70 ? '✓ High Fidelity' : '⚠ Action Needed'}</div>
+                    </div>
+                </div>
+
+                <div class="insight-card">
+                    <h3>📊 Campaign Overview</h3>
+                    <p><strong>Dataset:</strong> ${eventsData.length.toLocaleString()} total events across ${creativesData.length} creatives over ${uniqueDates} days</p>
+                    <p><strong>Performance:</strong> ${overallROAS}x ROAS with ${cleanPct}% clean attribution</p>
+                    <p><strong>Scale:</strong> $${Math.round(totalSpend).toLocaleString()} invested generating $${Math.round(totalRevenue).toLocaleString()} in revenue</p>
+                </div>
+
+                <div class="alert alert-info">
+                    <strong>🎯 Key Insights</strong>
+                    <p>This platform analyzed your performance marketing data across three critical dimensions: attribution integrity, creative fatigue, and revenue optimization opportunities. Use the tabs above to explore detailed breakdowns and actionable recommendations.</p>
+                </div>
+
+                <div class="insight-card">
+                    <h3>🚀 Next Steps</h3>
+                    <p>1. Review <strong>Attribution Integrity</strong> tab to identify tracking gaps</p>
+                    <p>2. Check <strong>Creative Fatigue</strong> tab for underperforming assets</p>
+                    <p>3. Explore <strong>Impact Analysis</strong> tab for revenue recovery opportunities</p>
+                    <p>4. Implement recommended actions to optimize campaign performance</p>
+                </div>
+            `;
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab').forEach((tab, i) => {
+                tab.classList.toggle('active', i === index);
+            });
+            document.querySelectorAll('.tab-content').forEach((content, i) => {
+                content.classList.toggle('active', i === index);
+            });
+        }
+    </script>
+</body>
+</html>
