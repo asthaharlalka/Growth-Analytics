@@ -788,7 +788,7 @@
             const creatives = Object.values(creativeMetrics).map(c => {
                 const roas = c.spend > 0 ? c.revenue / c.spend : 0;
                 const ctr = c.impressions > 0 ? (c.clicks / c.impressions * 100) : 0;
-                const cvr = c.clicks > 0 ? (c.purchases / c.clicks * 100) : 0;
+                const cvr = c.clicks > 0 ? (c.purchases / c.clicks) : 0;
                 const cpa = c.purchases > 0 ? c.spend / c.purchases : 0;
                 
                 // Enhanced fatigue detection with trend analysis
